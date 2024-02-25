@@ -4,8 +4,8 @@ import os
 
 
 
-def create_db(path=r"C:\Users\Alejandro Arango M\Documents\1Semestres UdeA\2024-1\Analitica 3\HR\OneDrive_1_24-2-2024"):
-    """"
+def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analitica_3"):
+    """
     Funcion para la creacion del Database
 
     Parametros
@@ -46,7 +46,7 @@ def create_db(path=r"C:\Users\Alejandro Arango M\Documents\1Semestres UdeA\2024-
         cursor.execute("DELETE FROM general_data WHERE TotalWorkingYears IS NULL")
         
         ## Crear nueva tabla
-        cursor.execute("CREATE TABLE IF NOT EXISTS general_data_up AS SELECT EmployeeID, InfoDate AS Date, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StandardHours, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager	FROM general_data")
+        cursor.execute("CREATE TABLE IF NOT EXISTS general_data_up AS SELECT EmployeeID, InfoDate AS Date, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager	FROM general_data")
         ## Crear nuevo index
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_general_data_up_EmployeeID ON general_data_up(EmployeeID)")
 
@@ -64,11 +64,37 @@ def create_db(path=r"C:\Users\Alejandro Arango M\Documents\1Semestres UdeA\2024-
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_retirement_info_up_EmployeeID ON retirement_info_up(EmployeeID)")
 
         ## Eliminar tablas modificadas
-        cursor.execute("DROP TABLE IF EXISTS general_data")
-        cursor.execute("DROP TABLE IF EXISTS employee_survey_data")
-        cursor.execute("DROP TABLE IF EXISTS manager_survey")
-        cursor.execute("DROP TABLE IF EXISTS retirement_info")
+        # cursor.execute("DROP TABLE IF EXISTS general_data")
+        # cursor.execute("DROP TABLE IF EXISTS employee_survey_data")
+        # cursor.execute("DROP TABLE IF EXISTS manager_survey")
+        # cursor.execute("DROP TABLE IF EXISTS retirement_info")
+
+        ## Cambio de catiegorias con muy poca influencia en las variables
+        cursor.execute("UPDATE manager_survey_up SET JobInvolvement = 0 WHERE JobInvolvement IN (1, 2)")
+        cursor.execute("UPDATE manager_survey_up SET JobInvolvement = 1 WHERE JobInvolvement IN (3, 4)")
+        cursor.execute("UPDATE general_data_up SET Education = 4 WHERE Education = 5")
+        
+        ## Eliminar datos del 2015 ya que son iguales y de poca relevancia
+        cursor.execute("DELETE FROM general_data_up WHERE strftime('%Y', Date) = '2015'")
+        cursor.execute("DELETE FROM manager_survey_up WHERE strftime('%Y', Date) = '2015'")
+        cursor.execute("DELETE FROM retirement_info_up WHERE strftime('%Y', Date) = '2015'")
+        cursor.execute("DELETE FROM employee_survey_data_up WHERE strftime('%Y', Date) = '2015'")
+        
+        ## Crear tabla con toda la informacion
+        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, EnvironmentSatisfaction, JobSatisfaction, WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, JobInvolvement, PerformanceRating, retirementType, resignationReason FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID);")
+        ## Llenar valores nulos de la nueva tabla
+        cursor.execute("UPDATE df SET retirementType = 'Active' WHERE retirementType IS NULL")
+        cursor.execute("UPDATE df SET resignationReason = 'Not applicable' WHERE resignationReason IS NULL")
+        
+        
         
         conn.commit()
+        
+        
+        
+     
+        
+        
+        
             
         conn.close()
