@@ -4,7 +4,7 @@ import os
 
 
 
-def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analitica_3"):
+def create_db(path=r"C:\Users\Alejandro Arango M\Documents\1Semestres UdeA\2024-1\Analitica 3\HR\OneDrive_1_24-2-2024"):
     """
     Funcion para la creacion del Database
 
@@ -59,7 +59,7 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         cursor.execute("UPDATE retirement_info SET resignationReason = 'Fired' WHERE resignationReason IS NULL;")
 
         ## Crear nueva tabla
-        cursor.execute("CREATE TABLE IF NOT EXISTS retirement_info_up AS SELECT EmployeeID, retirementDate AS Date, retirementType, resignationReason FROM retirement_info")
+        cursor.execute("CREATE TABLE IF NOT EXISTS retirement_info_up AS SELECT EmployeeID, Attrition, retirementDate AS Date, retirementType, resignationReason FROM retirement_info")
         ## Crear nuevo index
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_retirement_info_up_EmployeeID ON retirement_info_up(EmployeeID)")
 
@@ -81,11 +81,11 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         cursor.execute("DELETE FROM employee_survey_data_up WHERE strftime('%Y', Date) = '2015'")
         
         ## Crear tabla con toda la informacion
-        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, EnvironmentSatisfaction, JobSatisfaction, WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, JobInvolvement, PerformanceRating, retirementType, resignationReason FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID);")
+        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, EnvironmentSatisfaction, JobSatisfaction, WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, JobInvolvement, PerformanceRating, Attrition, retirementType, resignationReason FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID);")
         ## Llenar valores nulos de la nueva tabla
         cursor.execute("UPDATE df SET retirementType = 'Active' WHERE retirementType IS NULL")
         cursor.execute("UPDATE df SET resignationReason = 'Not applicable' WHERE resignationReason IS NULL")
-        
+        cursor.execute("UPDATE df SET Attrition = 'No' WHERE Attrition IS NULL")
         
         
         conn.commit()
