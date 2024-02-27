@@ -3,6 +3,16 @@ import pandas as pd
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pickle
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
+
 
 
 
@@ -16,14 +26,14 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
 
     """
     
-    if os.path.exists("data/human_db"):
-        
-        os.unlink("data/human_db")
-        os.rmdir("data")
-        
-        
     # if os.path.exists("data/human_db"):
-    #     pass
+        
+    #     os.unlink("data/human_db")
+    #     os.rmdir("data")
+        
+        
+    if os.path.exists("data/human_db"):
+        pass
     
     else:
         
@@ -55,8 +65,8 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         # Eliminar despedidos
         cursor.execute("DELETE FROM retirement_info WHERE retirementType = 'Fired'")
         
-        ## Crear nueva tabla
-        cursor.execute("CREATE TABLE IF NOT EXISTS general_data_up AS SELECT EmployeeID, InfoDate AS Date, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager	FROM general_data")
+        ## Crear nueva tabla elimiando Over18, EmployeeCount, StandardHours
+        cursor.execute("CREATE TABLE IF NOT EXISTS general_data_up AS SELECT EmployeeID, InfoDate AS Date, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager	FROM general_data")
         ## Crear nuevo index
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_general_data_up_EmployeeID ON general_data_up(EmployeeID)")
     
@@ -91,7 +101,7 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         cursor.execute("DELETE FROM employee_survey_data_up WHERE strftime('%Y', Date) = '2015'")
             
         ## Crear tabla con toda la informacion
-        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, CAST(EnvironmentSatisfaction AS TEXT) AS EnvironmentSatisfaction, CAST(JobSatisfaction AS TEXT) AS JobSatisfaction, CAST(WorkLifeBalance AS TEXT) AS WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, CAST(Education AS TEXT) Education, EducationField, Gender, CAST(JobLevel AS TEXT) JobLevel, CAST(JobRole AS TEXT) JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, CAST(StockOptionLevel AS TEXT) AS StockOptionLevel, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, CAST(JobInvolvement AS TEXT) AS JobInvolvement, CAST(PerformanceRating AS TEXT) AS PerformanceRating, retirementType, resignationReason, Attrition FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, CAST(EnvironmentSatisfaction AS TEXT) AS EnvironmentSatisfaction, CAST(JobSatisfaction AS TEXT) AS JobSatisfaction, CAST(WorkLifeBalance AS TEXT) AS WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, CAST(Education AS TEXT) Education, EducationField, Gender, CAST(JobLevel AS TEXT) JobLevel, CAST(JobRole AS TEXT) JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, CAST(StockOptionLevel AS TEXT) AS StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, CAST(JobInvolvement AS TEXT) AS JobInvolvement, CAST(PerformanceRating AS TEXT) AS PerformanceRating, retirementType, resignationReason, Attrition FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID)")
         ## Llenar valores nulos de la nueva tabla
         cursor.execute("UPDATE df SET retirementType = 'Active', resignationReason = 'Not applicable' WHERE retirementType IS NULL")
         cursor.execute("UPDATE df SET Attrition = '0' WHERE Attrition IS NULL")
@@ -105,7 +115,7 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
             
         conn.close()
     
-    
+create_db()
 
 def create_df(query, index=False):
 
@@ -146,7 +156,7 @@ def pieplot(df=df, groupby="Attrition", count_col="Date"):
 
     
     
-def histograms(df=df, nrows=3, ncols=3, figsize=(12, 12), var_obj="Attrition"):
+def histograms(df=df, nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
 
     table = pd.concat([df._get_numeric_data(), df[var_obj]], axis=1)
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
@@ -252,3 +262,127 @@ def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=Fals
 
 
   plt.tight_layout()
+  
+  def fit_model(del_feat=["Date", "EmployeeID"], model_n="lr", sample=...):
+    
+    
+    df_info = create_df("PRAGMA table_info(df)")
+
+
+    features = ", ".join(df_info["name"][~df_info["name"].isin(del_feat)].tolist())
+
+    query = "SELECT " + features + " FROM df"
+
+    df = create_df(query)
+    
+    target = "Attrition"
+    X = df.drop(columns=target)
+    y = df[target]
+
+    global X_train, X_test, y_train, y_test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    over_sampler = RandomOverSampler(random_state=42)
+    under_sampler = RandomUnderSampler(random_state=42)
+
+    global X_train_over, y_train_over, X_train_under, y_train_under
+    X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
+    X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
+
+    num_vals = df._get_numeric_data().columns.tolist()
+    cat_vals = [i for i in X.select_dtypes("object").columns.tolist() if X[i].str.len().iloc[0] > 3]
+    cat_processor = OneHotEncoder()
+    num_processor = StandardScaler()
+
+    processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
+
+    if model_n == "lr":
+
+        model = make_pipeline(
+                        processor, 
+                        LogisticRegression(random_state=42))
+
+        if sample == "over":
+            model.fit(X_train_over, y_train_over)
+        elif sample == "under":
+            model.fit(X_train_under, y_train_under)
+        else:
+            model.fit(X_train, y_train)
+            
+        return model
+        
+    if model_n == "rf":
+
+        model = make_pipeline(
+                        processor, 
+                        DecisionTreeClassifier(random_state=42))
+        if sample == "over":
+            model.fit(X_train_over, y_train_over)
+        elif sample == "under":
+            model.fit(X_train_under, y_train_under)
+        else:
+            model.fit(X_train, y_train)
+        return model
+
+def fit_model(del_feat=[], model_n="lr", sample=...):
+
+    delete = ["Date", "EmployeeID"] + del_feat
+    
+    df_info = create_df("PRAGMA table_info(df)")
+
+
+    features = ", ".join(df_info["name"][~df_info["name"].isin(delete)].tolist())
+
+    query = "SELECT " + features + " FROM df"
+
+    df = create_df(query)
+    
+    target = "Attrition"
+    X = df.drop(columns=target)
+    y = df[target]
+
+    global X_train, X_test, y_train, y_test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    over_sampler = RandomOverSampler(random_state=42)
+    under_sampler = RandomUnderSampler(random_state=42)
+
+    
+    X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
+    X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
+
+    num_vals = df._get_numeric_data().columns.tolist()
+    cat_vals = [i for i in X.select_dtypes("object").columns.tolist() if X[i].str.len().iloc[0] > 3]
+    cat_processor = OneHotEncoder()
+    num_processor = StandardScaler()
+
+    processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
+
+    if model_n == "lr":
+
+        model = make_pipeline(
+                        processor, 
+                        LogisticRegression(random_state=42))
+
+        if sample == "over":
+            model.fit(X_train_over, y_train_over)
+        elif sample == "under":
+            model.fit(X_train_under, y_train_under)
+        else:
+            model.fit(X_train, y_train)
+            
+        return model
+        
+    if model_n == "dt":
+
+        model = make_pipeline(
+                        processor, 
+                        DecisionTreeClassifier(random_state=42))
+        if sample == "over":
+            model.fit(X_train_over, y_train_over)
+        elif sample == "under":
+            model.fit(X_train_under, y_train_under)
+        else:
+            model.fit(X_train, y_train)
+        return model
+    
