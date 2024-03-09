@@ -17,8 +17,7 @@ from imblearn.under_sampling import RandomUnderSampler
 
 
 def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analitica_3"):
-    """
-    Funcion para la creacion del Database
+    """Funcion para la creacion del Database
 
     Parametros
     ------------
@@ -26,11 +25,7 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
 
     """
     
-    # if os.path.exists("data/human_db"):
-        
-    #     os.unlink("data/human_db")
-    #     os.rmdir("data")
-        
+    
         
     if os.path.exists("data/human_db"):
         pass
@@ -83,29 +78,22 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         ## Crear nuevo index
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_retirement_info_up_EmployeeID ON retirement_info_up(EmployeeID)")
     
-        ## Eliminar tablas modificadas
-        # cursor.execute("DROP TABLE IF EXISTS general_data")
-        # cursor.execute("DROP TABLE IF EXISTS employee_survey_data")
-        # cursor.execute("DROP TABLE IF EXISTS manager_survey")
-        # cursor.execute("DROP TABLE IF EXISTS retirement_info")
-    
+  
         ## Cambio de catiegorias con muy poca influencia en las variables
         cursor.execute("UPDATE manager_survey_up SET JobInvolvement = 0 WHERE JobInvolvement IN (1, 2)")
         cursor.execute("UPDATE manager_survey_up SET JobInvolvement = 1 WHERE JobInvolvement IN (3, 4)")
         cursor.execute("UPDATE general_data_up SET Education = 4 WHERE Education = 5")
         
-        ## Eliminar datos del 2015 ya que son iguales y de poca relevancia
-        cursor.execute("DELETE FROM general_data_up WHERE strftime('%Y', Date) = '2015'")
-        cursor.execute("DELETE FROM manager_survey_up WHERE strftime('%Y', Date) = '2015'")
-        cursor.execute("DELETE FROM retirement_info_up WHERE strftime('%Y', Date) = '2015'")
-        cursor.execute("DELETE FROM employee_survey_data_up WHERE strftime('%Y', Date) = '2015'")
             
         ## Crear tabla con toda la informacion
-        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, CAST(EnvironmentSatisfaction AS TEXT) AS EnvironmentSatisfaction, CAST(JobSatisfaction AS TEXT) AS JobSatisfaction, CAST(WorkLifeBalance AS TEXT) AS WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, CAST(Education AS TEXT) Education, EducationField, Gender, CAST(JobLevel AS TEXT) JobLevel, CAST(JobRole AS TEXT) JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, CAST(StockOptionLevel AS TEXT) AS StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, CAST(JobInvolvement AS TEXT) AS JobInvolvement, CAST(PerformanceRating AS TEXT) AS PerformanceRating, retirementType, resignationReason, Attrition FROM (SELECT * FROM employee_survey_data_up INNER JOIN general_data_up ON employee_survey_data_up.EmployeeID = general_data_up.EmployeeID INNER JOIN manager_survey_up ON employee_survey_data_up.EmployeeID = manager_survey_up.EmployeeID LEFT JOIN retirement_info_up ON employee_survey_data_up.EmployeeID = retirement_info_up.EmployeeID)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS df AS SELECT EmployeeID, Date, CAST(EnvironmentSatisfaction AS TEXT) AS EnvironmentSatisfaction, CAST(JobSatisfaction AS TEXT) AS JobSatisfaction, CAST(WorkLifeBalance AS TEXT) AS WorkLifeBalance, Age, BusinessTravel, Department, DistanceFromHome, CAST(Education AS TEXT) Education, EducationField, Gender, CAST(JobLevel AS TEXT) JobLevel, CAST(JobRole AS TEXT) JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, CAST(StockOptionLevel AS TEXT) AS StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager, CAST(JobInvolvement AS TEXT) AS JobInvolvement, CAST(PerformanceRating AS TEXT) AS PerformanceRating, retirementType, resignationReason, Attrition FROM (SELECT * FROM general_data_up t1 INNER JOIN  employee_survey_data_up t2 ON t1.EmployeeID = t2.EmployeeID AND strftime('%Y', t1.Date) = strftime('%Y', t2.Date) INNER JOIN manager_survey_up t3 ON t2.EmployeeID = t3.EmployeeID AND strftime('%Y', t2.Date) = strftime('%Y', t3.Date) LEFT JOIN retirement_info_up t4 ON t3.EmployeeID = t4.EmployeeID AND strftime('%Y', t3.Date) = strftime('%Y', t4.Date))")
         ## Llenar valores nulos de la nueva tabla
         cursor.execute("UPDATE df SET retirementType = 'Active', resignationReason = 'Not applicable' WHERE retirementType IS NULL")
         cursor.execute("UPDATE df SET Attrition = '0' WHERE Attrition IS NULL")
         cursor.execute("UPDATE df SET Attrition = '1' WHERE Attrition = 'Yes'")
+        
+        cursor.execute("DELETE FROM df WHERE EmployeeID IN (SELECT t1.EmployeeID FROM (SELECT * FROM df WHERE resignationReason <> 'Not applicable' AND strftime('%Y', Date) = '2015') t1 INNER JOIN (SELECT * FROM df WHERE strftime('%Y', Date) = '2016') t2 ON t1.EmployeeID = t2.EmployeeID) AND strftime('%Y', Date) = '2016';")
+
         
         
         conn.commit()
