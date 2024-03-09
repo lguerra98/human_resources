@@ -59,7 +59,7 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
         cursor.execute("DELETE FROM general_data WHERE TotalWorkingYears IS NULL")
         
         # Eliminar despedidos
-        cursor.execute("DELETE FROM retirement_info WHERE retirementType = 'Fired'")
+        # cursor.execute("DELETE FROM retirement_info WHERE retirementType = 'Fired'")
         
         ## Crear nueva tabla elimiando Over18, EmployeeCount, StandardHours
         cursor.execute("CREATE TABLE IF NOT EXISTS general_data_up AS SELECT EmployeeID, InfoDate AS Date, Age, BusinessTravel, Department, DistanceFromHome, Education, EducationField, Gender, JobLevel, JobRole, MaritalStatus, MonthlyIncome, NumCompaniesWorked, PercentSalaryHike, StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion, YearsWithCurrManager	FROM general_data")
@@ -104,44 +104,39 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
             
         conn.close()
     
-create_db()
+
 
 def create_df(query, index=False):
 
     conn = sqlite3.connect("data/human_db")
 
     if index:
-        df = pd.read_sql(query, conn, index_col="EmployeeID")
+        df = pd.read_sql(query, conn, index_col="EmployeeID", parse_dates=["Date"])
     else:
         df = pd.read_sql(query, conn)
+        
     conn.close()
     return df
 
 df = create_df("SELECT * FROM df", index=True)
 
 
-def heatmap(df=..., table=False):
+def heatmap(df=..., annot=False):
     
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
-    corr = df._get_numeric_data().corr()
+    corr = df._get_numeric_data().corr().round(2)
     
-    if table:
-        
-
-        sns.heatmap(corr.abs());
-        
-        display(corr.round(2).style.background_gradient(axis=None))
-    else:
-        sns.heatmap(corr.abs());
+    
+    sns.heatmap(corr.abs(), annot=annot);
         
         
         
-def pieplot(df=..., groupby=["Attrition", df["Date"].dt.strftime("%Y")], count_col="Attrition"):
+def pieplot(df=..., groupby=..., count_col="Attrition"):
     
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
-    
+    groupby = ["Attrition", df["Date"].dt.strftime("%Y")] if groupby == ... else groupby
 
     table = df.groupby(groupby, as_index=False)[count_col].value_counts().drop(columns=count_col)
     
@@ -189,9 +184,9 @@ def histograms(df=..., nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
 
 
 
-def scatterplots(df=df, feats=["YearsAtCompany", "YearsWithCurrManager", "YearsSinceLastPromotion", "TotalWorkingYears", "Age"], nrows=4, ncols=3):
+def scatterplots(df=..., feats=["YearsAtCompany", "YearsWithCurrManager", "YearsSinceLastPromotion", "TotalWorkingYears", "Age"], nrows=4, ncols=3):
 
-
+    assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10, 10))
     i = 0
@@ -212,14 +207,14 @@ def scatterplots(df=df, feats=["YearsAtCompany", "YearsWithCurrManager", "YearsS
 
 
 
-def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=False, targ_col=...):
+def barcharts(df=..., normalize=True, obj_col="Attrition", rotation=90, only=False, targ_col=...):
     
   
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"  
 
 
 
-    data = df.select_dtypes(include=["object"]).drop(columns="Date")
+    data = df.select_dtypes(include=["object"])
 
 
     if only:
@@ -259,9 +254,7 @@ def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=Fals
           
           if normalize:
             
-            if data.columns[c] == "retirementType":
-                break
-            
+        
             ax = axes[x,y]
             table = data.groupby(obj_col, as_index=False)[data.columns[c]].value_counts(normalize=normalize).round(2)
             order = sorted(table.iloc[:,1].unique())
@@ -277,7 +270,7 @@ def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=Fals
             else:
                 y += 1
           
-          
+            
 
           else:
   
@@ -295,11 +288,11 @@ def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=Fals
                 x += 1
             else:
                 y += 1
-  
+        
   
     plt.tight_layout()
 
-
+    
 
 
     
