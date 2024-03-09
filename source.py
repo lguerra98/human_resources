@@ -186,7 +186,30 @@ def histograms(df=..., nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
             y += 1
     
     plt.tight_layout()
-   
+
+
+
+def scatterplots(df=df, feats=["YearsAtCompany", "YearsWithCurrManager", "YearsSinceLastPromotion", "TotalWorkingYears", "Age"], nrows=4, ncols=3):
+
+
+    
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10, 10))
+    i = 0
+    j = 0
+    
+    for x, y in itertools.combinations(feats, r=2):
+    
+        df[[x, y]].plot.scatter(x=x, y=y, ax=axes[i, j], xlabel=f'{x}')
+    
+        if j!=0 and j%2 == 0:
+            j = 0
+            i += 1
+        else:
+            j += 1
+    
+    fig.suptitle("Mapas de dispersion para variables de alta correlacion")
+    plt.tight_layout()
+
 
 
 def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=False, targ_col=...):
