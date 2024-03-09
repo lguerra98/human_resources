@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
+import itertools
 
 
 
@@ -119,7 +120,10 @@ def create_df(query, index=False):
 df = create_df("SELECT * FROM df", index=True)
 
 
-def heatmap(df=df, table=False):
+def heatmap(df=..., table=False):
+    
+    assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
+    
     corr = df._get_numeric_data().corr()
     
     if table:
@@ -133,18 +137,35 @@ def heatmap(df=df, table=False):
         
         
         
-def pieplot(df=df, groupby="Attrition", count_col="Date"):
-
-    table = df.groupby([groupby], as_index=False)[count_col].value_counts().drop(columns=count_col)
+def pieplot(df=..., groupby=["Attrition", df["Date"].dt.strftime("%Y")], count_col="Attrition"):
     
-    table.plot(kind="pie", y="count", autopct='%1.1f%%', 
-               labels=["Stayed", "Left"], ylabel="", 
-               explode=(0.13, 0), shadow=True, labeldistance=.5, pctdistance=1.3);
+    assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
+    
     
 
+    table = df.groupby(groupby, as_index=False)[count_col].value_counts().drop(columns=count_col)
     
     
-def histograms(df=df, nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
+    plt.figure(figsize=(12, 12))
+
+    plt.subplot(1,3,1)
+    plt.pie(x=table.loc[table["Date"] == "2016", "count"], autopct='%1.1f%%', 
+                    labels=["Stayed", "Left"], 
+                    explode=(0.13, 0), shadow=True, labeldistance=.5, pctdistance=1.3);
+    plt.title("Proporcion de empleados despedidos \no que renunciaron 2016", loc="left")
+    
+    plt.subplot(1,3,3)
+    plt.pie(x=table.loc[table["Date"] == "2015", "count"], autopct='%1.1f%%', 
+                    labels=["Stayed", "Left"], 
+                    explode=(0.6, 0), shadow=True, labeldistance=.5, pctdistance=1.3);
+    plt.title("Proporcion de empleados despedidos \no que renunciaron 2015", loc="right")
+    
+
+    
+    
+def histograms(df=..., nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
+    
+    assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
 
     table = pd.concat([df._get_numeric_data(), df[var_obj]], axis=1)
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
@@ -169,189 +190,136 @@ def histograms(df=df, nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
 
 
 def barcharts(df=df, normalize=True, obj_col="Attrition", rotation=90, only=False, targ_col=...):
-
-
-  data = df.select_dtypes(include=["object"]).drop(columns="Date")
-
-
-  if only:
-
-    assert targ_col in data.columns, "Columna no encontrada"
-
-    if normalize:
-
-      table = data.groupby(obj_col, as_index=False)[targ_col].value_counts(normalize=normalize).round(2)
-      order = sorted(table.iloc[:,1].unique())
-      ax = sns.barplot(data=table, x=table.columns[1], y="proportion", hue=obj_col, order=order)
-
-      if len(order[0]) > 3:
-              plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
-      
-      for i in ax.containers:
-        ax.bar_label(i,)
-
-    else:
-
-      table = data.groupby(obj_col, as_index=False)[targ_col].value_counts(normalize=normalize).round(2)
-      order = sorted(table.iloc[:,1].unique())
-      ax = sns.barplot(data=table, x=table.columns[1], y="count", hue=obj_col, order=order)
-
-      if len(order[0]) > 3:
-              plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
-      
-      for i in ax.containers:
-        ax.bar_label(i,)
-  else:
-
-    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(15, 15))
-    x = 0
-    y = 0
-
-    for c in range(len(data.columns) - 1):
-        
-        if normalize:
-          
-          if data.columns[c] == "retirementType":
-              break
-          
-          ax = axes[x,y]
-          table = data.groupby(obj_col, as_index=False)[data.columns[c]].value_counts(normalize=normalize).round(2)
-          order = sorted(table.iloc[:,1].unique())
-          sns.barplot(data=table, x=table.columns[1], y="proportion", hue=obj_col, ax=ax, order=order)
-
-          if len(order[0]) > 3:
-              plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
-
-
-          if y != 0 and y%3 == 0:
-              y = 0
-              x += 1
-          else:
-              y += 1
-          
-          
-
-        else:
-
-          ax = axes[x,y]
-          table = data.groupby(obj_col, as_index=False)[data.columns[c]].value_counts(normalize=normalize).round(2)
-          order = sorted(table.iloc[:,1].unique())
-          sns.barplot(data=table, x=table.columns[1], y="count", hue=obj_col, ax=ax, order=order)
-
-          if len(order[0]) > 3:
-              plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
-
-
-          if y != 0 and y%3 == 0:
-              y = 0
-              x += 1
-          else:
-              y += 1
-
-
-  plt.tight_layout()
+    
   
-  def fit_model(del_feat=["Date", "EmployeeID"], model_n="lr", sample=...):
-    
-    
-    df_info = create_df("PRAGMA table_info(df)")
+    assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"  
 
 
-    features = ", ".join(df_info["name"][~df_info["name"].isin(del_feat)].tolist())
 
-    query = "SELECT " + features + " FROM df"
+    data = df.select_dtypes(include=["object"]).drop(columns="Date")
 
-    df = create_df(query)
-    
-    target = "Attrition"
-    X = df.drop(columns=target)
-    y = df[target]
 
-    global X_train, X_test, y_train, y_test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    over_sampler = RandomOverSampler(random_state=42)
-    under_sampler = RandomUnderSampler(random_state=42)
-
-    global X_train_over, y_train_over, X_train_under, y_train_under
-    X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
-    X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
-
-    num_vals = df._get_numeric_data().columns.tolist()
-    cat_vals = [i for i in X.select_dtypes("object").columns.tolist() if X[i].str.len().iloc[0] > 3]
-    cat_processor = OneHotEncoder()
-    num_processor = StandardScaler()
-
-    processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
-
-    if model_n == "lr":
-
-        model = make_pipeline(
-                        processor, 
-                        LogisticRegression(random_state=42))
-
-        if sample == "over":
-            model.fit(X_train_over, y_train_over)
-        elif sample == "under":
-            model.fit(X_train_under, y_train_under)
-        else:
-            model.fit(X_train, y_train)
-            
-        return model
+    if only:
+  
+      assert targ_col in data.columns, "Columna no encontrada"
+  
+      if normalize:
+  
+        table = data.groupby(obj_col, as_index=False)[targ_col].value_counts(normalize=normalize).round(2)
+        order = sorted(table.iloc[:,1].unique())
+        ax = sns.barplot(data=table, x=table.columns[1], y="proportion", hue=obj_col, order=order)
+  
+        if len(order[0]) > 3:
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
         
-    if model_n == "rf":
+        for i in ax.containers:
+          ax.bar_label(i,)
+  
+      else:
+  
+        table = data.groupby(obj_col, as_index=False)[targ_col].value_counts(normalize=normalize).round(2)
+        order = sorted(table.iloc[:,1].unique())
+        ax = sns.barplot(data=table, x=table.columns[1], y="count", hue=obj_col, order=order)
+  
+        if len(order[0]) > 3:
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
+        
+        for i in ax.containers:
+          ax.bar_label(i,)
+    else:
+  
+      fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(15, 15))
+      x = 0
+      y = 0
+  
+      for c in range(len(data.columns) - 1):
+          
+          if normalize:
+            
+            if data.columns[c] == "retirementType":
+                break
+            
+            ax = axes[x,y]
+            table = data.groupby(obj_col, as_index=False)[data.columns[c]].value_counts(normalize=normalize).round(2)
+            order = sorted(table.iloc[:,1].unique())
+            sns.barplot(data=table, x=table.columns[1], y="proportion", hue=obj_col, ax=ax, order=order)
+  
+            if len(order[0]) > 3:
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
+  
+  
+            if y != 0 and y%3 == 0:
+                y = 0
+                x += 1
+            else:
+                y += 1
+          
+          
 
-        model = make_pipeline(
-                        processor, 
-                        DecisionTreeClassifier(random_state=42))
-        if sample == "over":
-            model.fit(X_train_over, y_train_over)
-        elif sample == "under":
-            model.fit(X_train_under, y_train_under)
-        else:
-            model.fit(X_train, y_train)
-        return model
+          else:
+  
+            ax = axes[x,y]
+            table = data.groupby(obj_col, as_index=False)[data.columns[c]].value_counts(normalize=normalize).round(2)
+            order = sorted(table.iloc[:,1].unique())
+            sns.barplot(data=table, x=table.columns[1], y="count", hue=obj_col, ax=ax, order=order)
+  
+            if len(order[0]) > 3:
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=rotation)
+  
+  
+            if y != 0 and y%3 == 0:
+                y = 0
+                x += 1
+            else:
+                y += 1
+  
+  
+    plt.tight_layout()
 
+
+
+
+    
 def fit_model(del_feat=[], model_n="lr", sample=...):
-
+    
     delete = ["Date", "EmployeeID"] + del_feat
     
     df_info = create_df("PRAGMA table_info(df)")
-
-
+    
+    
     features = ", ".join(df_info["name"][~df_info["name"].isin(delete)].tolist())
-
+    
     query = "SELECT " + features + " FROM df"
-
+    
     df = create_df(query)
     
     target = "Attrition"
     X = df.drop(columns=target)
     y = df[target]
-
+    
     global X_train, X_test, y_train, y_test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
+    
     over_sampler = RandomOverSampler(random_state=42)
     under_sampler = RandomUnderSampler(random_state=42)
-
+    
     
     X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
     X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
-
+    
     num_vals = df._get_numeric_data().columns.tolist()
     cat_vals = [i for i in X.select_dtypes("object").columns.tolist() if X[i].str.len().iloc[0] > 3]
     cat_processor = OneHotEncoder()
     num_processor = StandardScaler()
-
+    
     processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
-
+    
     if model_n == "lr":
-
+    
         model = make_pipeline(
                         processor, 
                         LogisticRegression(random_state=42))
-
+    
         if sample == "over":
             model.fit(X_train_over, y_train_over)
         elif sample == "under":
@@ -362,7 +330,7 @@ def fit_model(del_feat=[], model_n="lr", sample=...):
         return model
         
     if model_n == "dt":
-
+    
         model = make_pipeline(
                         processor, 
                         DecisionTreeClassifier(random_state=42))
@@ -373,4 +341,6 @@ def fit_model(del_feat=[], model_n="lr", sample=...):
         else:
             model.fit(X_train, y_train)
         return model
+    
+
     
