@@ -358,131 +358,132 @@ def fit_model(del_feat=[], model_n="lr", sample=...):
             model.fit(X_train, y_train)
         return model
     
-def rf_module(del_feat=[], sample="over", fig=False):
     
-    if len(del_feat) <= 1:
+# def rf_module(del_feat=[], sample="over", fig=False):
+    
+#     if len(del_feat) <= 1:
         
-        name = del_feat[0] if len(del_feat) == 1 else "all_feat"
-    else:
-        name = "_".join(del_feat)
+#         name = del_feat[0] if len(del_feat) == 1 else "all_feat"
+#     else:
+#         name = "_".join(del_feat)
         
-    if os.path.exists(f"modelos/RandomForest/randomforest_{name}"):
-        pass
-    else:
-        os.makedirs(f"modelos/RandomForest/randomforest_{name}")
+#     if os.path.exists(f"modelos/RandomForest/randomforest_{name}"):
+#         pass
+#     else:
+#         os.makedirs(f"modelos/RandomForest/randomforest_{name}")
     
-    with open(f"modelos/RandomForest/randomforest_{name}/del_feat.pkl", "wb") as f:
-        pickle.dump(del_feat, f)
+#     with open(f"modelos/RandomForest/randomforest_{name}/del_feat.pkl", "wb") as f:
+#         pickle.dump(del_feat, f)
     
-    if fig:
+#     if fig:
 
-        assert os.path.exists(f"modelos/RandomForest/randomforest_{name}"), "Todavia no se ha entrenado un modelo sin las variables especificadas"
+#         assert os.path.exists(f"modelos/RandomForest/randomforest_{name}"), "Todavia no se ha entrenado un modelo sin las variables especificadas"
 
-        if len(del_feat) <= 1:
+#         if len(del_feat) <= 1:
             
-            title = "sin " + del_feat[0] if len(del_feat) == 1 else "con todas las features"
-        else:
-            title = "sin " + "& ".join(del_feat)
+#             title = "sin " + del_feat[0] if len(del_feat) == 1 else "con todas las features"
+#         else:
+#             title = "sin " + "& ".join(del_feat)
 
-        with open(f"modelos/RandomForest/randomforest_{name}/imp_under_{name}.pkl", "rb") as f:
-            series_under = pickle.load(f)
-        with open(f"modelos/RandomForest/randomforest_{name}/imp_over_{name}.pkl", "rb") as f:
-            series_over = pickle.load(f)
+#         with open(f"modelos/RandomForest/randomforest_{name}/imp_under_{name}.pkl", "rb") as f:
+#             series_under = pickle.load(f)
+#         with open(f"modelos/RandomForest/randomforest_{name}/imp_over_{name}.pkl", "rb") as f:
+#             series_over = pickle.load(f)
 
 
-        plt.figure(figsize=(10,6))
+#         plt.figure(figsize=(10,6))
 
-        plt.subplot(1,3,1)
-        series_over.sort_values().plot(kind="barh")
-        plt.title(f"Entrenamiento over sample\n{title}")
-        plt.xlabel("Gini importance")
+#         plt.subplot(1,3,1)
+#         series_over.sort_values().plot(kind="barh")
+#         plt.title(f"Entrenamiento over sample\n{title}")
+#         plt.xlabel("Gini importance")
 
-        plt.subplot(1,3,3)
-        series_under.sort_values().plot(kind="barh")
-        plt.title(f"Entrenamiento under sample\n{title}")
-        plt.xlabel("Gini importance")
+#         plt.subplot(1,3,3)
+#         series_under.sort_values().plot(kind="barh")
+#         plt.title(f"Entrenamiento under sample\n{title}")
+#         plt.xlabel("Gini importance")
 
-        plt.savefig(f"modelos/RandomForest/randomforest_{name}/plot_{name}.png")
+#         plt.savefig(f"modelos/RandomForest/randomforest_{name}/plot_{name}.png")
         
-    else:
+#     else:
 
         
-        df_info = create_df("PRAGMA table_info(df)")
+#         df_info = create_df("PRAGMA table_info(df)")
         
         
-        features = ", ".join(df_info["name"][~df_info["name"].isin(del_feat)].tolist()) if len(del_feat) != 0 else "*"
+#         features = ", ".join(df_info["name"][~df_info["name"].isin(del_feat)].tolist()) if len(del_feat) != 0 else "*"
         
-        query = "SELECT " + features + " FROM df"
+#         query = "SELECT " + features + " FROM df"
         
-        df = create_df(query, index=True)
+#         df = create_df(query, index=True)
         
-        target = "Attrition"
+#         target = "Attrition"
         
-        X = df.drop(columns=[target, "Date", "retirementType", "resignationReason"])
-        y = df[target]
+#         X = df.drop(columns=[target, "Date", "retirementType", "resignationReason"])
+#         y = df[target]
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        
-        
-        over_sampler = RandomOverSampler(random_state=42)
-        under_sampler = RandomUnderSampler(random_state=42)
+#         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
         
-        X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
-        X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
         
-        num_vals = X._get_numeric_data().columns.tolist()
-        cat_vals = X.select_dtypes("object").columns.tolist()
+#         over_sampler = RandomOverSampler(random_state=42)
+#         under_sampler = RandomUnderSampler(random_state=42)
+        
+        
+#         X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
+#         X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
+        
+#         num_vals = X._get_numeric_data().columns.tolist()
+#         cat_vals = X.select_dtypes("object").columns.tolist()
       
         
-        cat_processor = OrdinalEncoder()
-        num_processor = StandardScaler()
+#         cat_processor = OrdinalEncoder()
+#         num_processor = StandardScaler()
         
-        processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
+#         processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
         
         
-        clf = make_pipeline(processor,
-                           RandomForestClassifier(random_state=42))
+#         clf = make_pipeline(processor,
+#                            RandomForestClassifier(random_state=42))
         
-        params = {"randomforestclassifier__n_estimators": range(25, 100, 25),
-                 "randomforestclassifier__max_depth": range(10, 40, 10)}
+#         params = {"randomforestclassifier__n_estimators": range(25, 100, 25),
+#                  "randomforestclassifier__max_depth": range(10, 40, 10)}
         
-        model = GridSearchCV(clf, param_grid=params, cv=7, verbose=True, n_jobs=-1)
+#         model = GridSearchCV(clf, param_grid=params, cv=7, verbose=True, n_jobs=-1)
 
         
         
         
         
-        for i, j in zip(("X_train", "X_test", "y_train", "y_test"), (X_train, X_test, y_train, y_test)):
-            with open(f"modelos/RandomForest/randomforest_{name}/{i}.pkl", "wb") as f:
-                pickle.dump(j, f)
+#         for i, j in zip(("X_train", "X_test", "y_train", "y_test"), (X_train, X_test, y_train, y_test)):
+#             with open(f"modelos/RandomForest/randomforest_{name}/{i}.pkl", "wb") as f:
+#                 pickle.dump(j, f)
             
-        if sample == "over":
+#         if sample == "over":
             
-            model.fit(X_train_over, y_train_over)
+#             model.fit(X_train_over, y_train_over)
             
-            imp_over = model.best_estimator_.named_steps["randomforestclassifier"].feature_importances_
+#             imp_over = model.best_estimator_.named_steps["randomforestclassifier"].feature_importances_
             
-            with open(f"modelos/RandomForest/randomforest_{name}/randomforest_over_{name}.pkl", "wb") as f:
-                pickle.dump(model, f)
+#             with open(f"modelos/RandomForest/randomforest_{name}/randomforest_over_{name}.pkl", "wb") as f:
+#                 pickle.dump(model, f)
 
-            series_over = pd.Series(imp_over, index=X.columns)
+#             series_over = pd.Series(imp_over, index=X.columns)
 
-            with open(f"modelos/RandomForest/randomforest_{name}/imp_over_{name}.pkl", "wb") as f:
-                    pickle.dump(series_over, f)
+#             with open(f"modelos/RandomForest/randomforest_{name}/imp_over_{name}.pkl", "wb") as f:
+#                     pickle.dump(series_over, f)
                 
-        elif sample == "under":
+#         elif sample == "under":
             
-            model.fit(X_train_under, y_train_under)
+#             model.fit(X_train_under, y_train_under)
             
-            imp_under = model.best_estimator_.named_steps["randomforestclassifier"].feature_importances_
+#             imp_under = model.best_estimator_.named_steps["randomforestclassifier"].feature_importances_
             
-            with open(f"modelos/RandomForest/randomforest_{name}/randomforest_under_{name}.pkl", "wb") as f:
-                pickle.dump(model, f)
+#             with open(f"modelos/RandomForest/randomforest_{name}/randomforest_under_{name}.pkl", "wb") as f:
+#                 pickle.dump(model, f)
 
-            series_under = pd.Series(imp_under, index=X.columns)
+#             series_under = pd.Series(imp_under, index=X.columns)
                 
-            with open(f"modelos/RandomForest/randomforest_{name}/imp_under_{name}.pkl", "wb") as f:
-                    pickle.dump(series_under, f)
+#             with open(f"modelos/RandomForest/randomforest_{name}/imp_under_{name}.pkl", "wb") as f:
+#                     pickle.dump(series_under, f)
     
