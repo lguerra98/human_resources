@@ -296,67 +296,70 @@ def barcharts(df=..., normalize=True, obj_col="Attrition", rotation=90, only=Fal
 
 
     
-def fit_model(del_feat=[], model_n="lr", sample=...):
-    
-    delete = ["Date", "EmployeeID"] + del_feat
-    
-    df_info = create_df("PRAGMA table_info(df)")
-    
-    
-    features = ", ".join(df_info["name"][~df_info["name"].isin(delete)].tolist())
-    
-    query = "SELECT " + features + " FROM df"
-    
-    df = create_df(query)
-    
-    target = "Attrition"
-    X = df.drop(columns=target)
-    y = df[target]
-    
-    global X_train, X_test, y_train, y_test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    over_sampler = RandomOverSampler(random_state=42)
-    under_sampler = RandomUnderSampler(random_state=42)
-    
-    
-    X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
-    X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
-    
-    num_vals = df._get_numeric_data().columns.tolist()
-    cat_vals = [i for i in X.select_dtypes("object").columns.tolist() if X[i].str.len().iloc[0] > 3]
+def fit_model(vars=None, year=None, clf="rf", sample=None):
+
+  if year:
+    query = f"SELECT * FROM df WHERE strftime('%Y', Date) = '{year}'"
+  else:
+    query = "SELECT * FROM df"
+
+  df = create_df(query, index=True)
+
+  target = "Attrition"
+
+  if vars:
+    X = df[vars]
+  else:
+    X = df.drop([target, "retirementType", "resignationReason", "Date"], axis=1)
+
+  y = df[target]
+
+  global X_test, y_test
+  X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+  if clf == "svc":
     cat_processor = OneHotEncoder()
-    num_processor = StandardScaler()
-    
-    processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
-    
-    if model_n == "lr":
-    
-        model = make_pipeline(
-                        processor, 
-                        LogisticRegression(random_state=42))
-    
-        if sample == "over":
-            model.fit(X_train_over, y_train_over)
-        elif sample == "under":
-            model.fit(X_train_under, y_train_under)
-        else:
-            model.fit(X_train, y_train)
-            
-        return model
-        
-    if model_n == "dt":
-    
-        model = make_pipeline(
-                        processor, 
-                        DecisionTreeClassifier(random_state=42))
-        if sample == "over":
-            model.fit(X_train_over, y_train_over)
-        elif sample == "under":
-            model.fit(X_train_under, y_train_under)
-        else:
-            model.fit(X_train, y_train)
-        return model
+
+  else:
+    cat_processor = OrdinalEncoder()
+
+
+  num_processor = StandardScaler()
+
+  num_vals = X._get_numeric_data().columns.tolist()
+  cat_vals = X.select_dtypes("object").columns.tolist()
+
+  over_sampler = RandomOverSampler(random_state=42)
+  under_sampler = RandomUnderSampler(random_state=42)
+
+  X_train_over, y_train_over = over_sampler.fit_resample(X_train, y_train)
+  X_train_under, y_train_under = under_sampler.fit_resample(X_train, y_train)
+
+  processor = ColumnTransformer(transformers=[("cat", cat_processor, cat_vals), ("num", num_processor, num_vals)])
+
+  if clf == "svc":
+
+    model = make_pipeline(processor,
+                      SVC(random_state=42))
+  elif clf == "rf":
+
+    model = make_pipeline(processor,
+                      RandomForestClassifier(random_state=42))
+  else:
+
+    model = make_pipeline(processor,
+                      GradientBoostingClassifier(random_state=42))
+
+  if sample == "over":
+    model.fit(X_train_over, y_train_over)
+
+  elif sample == "under":
+    model.fit(X_train_under, y_train_under)
+
+  else:
+    model.fit(X_train, y_train)
+
+  return model
     
     
 # def rf_module(del_feat=[], sample="over", fig=False):
