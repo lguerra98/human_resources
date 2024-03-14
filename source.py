@@ -5,15 +5,19 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pickle
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder, MinMaxScaler
 from sklearn.linear_model import LogisticRegression 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import  SelectKBest, SelectFromModel, chi2, mutual_info_classif, RFE
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.compose import ColumnTransformer
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
+from sklearn.svm import SVC
+
+from collections import Counter
 import itertools
 
 
