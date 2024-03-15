@@ -6,10 +6,8 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder, MinMaxScaler
-from sklearn.linear_model import LogisticRegression 
-from sklearn.feature_selection import  SelectKBest, SelectFromModel, chi2, mutual_info_classif, RFE
+from sklearn.feature_selection import  SelectKBest, chi2, mutual_info_classif, RFE
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.compose import ColumnTransformer
@@ -18,26 +16,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from sklearn.svm import SVC
 from sklearn.metrics import f1_score
 
-from sklearn.feature_selection import VarianceThreshold, SelectKBest, SelectFromModel, chi2, mutual_info_classif, RFECV, RFE
-from sklearn.linear_model import Lasso, LassoCV, RidgeClassifier, RidgeClassifierCV, LinearRegression, LogisticRegression, LinearRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder, MinMaxScaler
-from sklearn.compose import ColumnTransformer
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.under_sampling import RandomUnderSampler
-import numpy as np
 
-from sklearn.feature_selection import VarianceThreshold, SelectKBest, SelectFromModel, chi2, mutual_info_classif, RFECV, RFE
-from sklearn.linear_model import Lasso, LassoCV, RidgeClassifier, RidgeClassifierCV, LinearRegression, LogisticRegression, LinearRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder, MinMaxScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import precision_score, f1_score
 
 
 from collections import Counter
@@ -47,7 +26,8 @@ import itertools
 
 
 def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analitica_3"):
-    """Funcion para la creacion del Database
+    """
+    Funcion para la creacion del Database
 
     Parametros
     ------------
@@ -136,6 +116,16 @@ def create_db(path=r"C:\Users\USUARIO\OneDrive - Universidad de Antioquia\Analit
 
 
 def create_df(query, index=False):
+    """
+    Funcion para la creacion del Data frame desde la base de datos, recibe una consulta 
+    SQL y devulve un Data Frame de pandas
+
+    Parametros
+    ------------
+        query:  Consulta en SQL de la base de datos requerida
+        index: Use EmployeedID as index. Default False
+
+    """
 
     conn = sqlite3.connect("data/human_db")
 
@@ -149,6 +139,17 @@ def create_df(query, index=False):
 
 
 def heatmap(df=..., annot=False):
+    """
+    Funcion para el mapa de correlacion de las variables numericas de un Data Frame
+    devuele una figura de matplotlib
+    
+    Parametros
+    ------------
+        df: DataFrame con la informacion a dibujar
+        annot: Mostrar valores en el grafico
+    
+    """
+    
     
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
@@ -160,6 +161,16 @@ def heatmap(df=..., annot=False):
         
         
 def pieplot(df=..., groupby=..., count_col="Attrition"):
+    """
+    Funcion para la visualizacion de la proporcion de empleados por clase a predecir
+    Devuelve una figura de Matplotlib
+    
+    Parametros
+    -------------
+        df: DataFrame con la informacion
+        groupby: columna por la cual agrupar
+        count_col: Variable objetivo. Default Attrition
+    """
     
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
@@ -186,6 +197,17 @@ def pieplot(df=..., groupby=..., count_col="Attrition"):
     
     
 def histograms(df=..., nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
+    """
+    Funcion para la visualizacion de los histogramas de las variables numericas
+    
+    Parametros
+    ------------
+        df: Dataframe con la informacion
+        nrows : Numero de filas del subplot. Default
+        ncols: Numero de columnas del subplot. Default 3
+        figsize: Tamano de la nueva figura. Deafult (12, 12)
+    """
+    
     
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
 
@@ -212,6 +234,17 @@ def histograms(df=..., nrows=4, ncols=3, figsize=(12, 12), var_obj="Attrition"):
 
 
 def scatterplots(df=..., feats=["YearsAtCompany", "YearsWithCurrManager", "YearsSinceLastPromotion", "TotalWorkingYears", "Age"], nrows=4, ncols=3):
+    
+    """
+    Funcion para visualizacion de variables altamente correlacionadas
+    
+    Parametros:
+    --------------
+        df: Data frame con los datos a visualizar
+        feats: Columnas altamente correlacionadas
+        nrows: Filas la new grafica
+        ncols = Columnas de la nueva grafica
+    """
 
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"
     
@@ -235,6 +268,20 @@ def scatterplots(df=..., feats=["YearsAtCompany", "YearsWithCurrManager", "Years
 
 
 def barcharts(df=..., normalize=True, obj_col="Attrition", rotation=90, only=False, targ_col=...):
+    """
+    Funcion para la visualizacion de los histogramas de variables categoricas
+    
+    Parametros:
+    --------------
+        df: Data frame con la informacion
+        normalize: Usar o no el promedio. Default True
+        obj_col: Variable objetivo
+        rotacion: rotacion de los ticks de la grafica
+        only: True si solo se quiere visualiizar una variable. Default False
+        targ_col: Columna a visualizar, solo sirve si only es True
+    
+    """
+    
     
   
     assert isinstance(df, pd.DataFrame), "df debe ser un Dataframe"  
@@ -322,6 +369,20 @@ def barcharts(df=..., normalize=True, obj_col="Attrition", rotation=90, only=Fal
     
     
 def fit_model(vars=None, year=None, clf="rf", sample=None, save=False, prefix=""):
+  """
+  Funcion para el entrenamiento de los modelos
+  
+  Parametros:
+  --------------
+      vars: Variables a utilizar para el modelo
+      year: Año en que se tomaron los datos para entrenamiento
+      clf: Tipo de algoritmo a utilizar. ("rf", "gb", "svc")
+      sample: Usar estrategia de re-sampleo para el entrenamiento
+      save: True si se quiere guardar el modelo como archivo. Default False
+      prefix: prefijo a utilizar en el modelo, solo funciona si True es verdadero
+      
+  """  
+    
 
   if year:
     query = f"SELECT * FROM df WHERE strftime('%Y', Date) = '{year}'"
@@ -404,7 +465,21 @@ def fit_model(vars=None, year=None, clf="rf", sample=None, save=False, prefix=""
   return model
 
 def feature_sel(num_feat_kbest=20, num_rfe=15, plot_metric="chi2", plot=False, year_vars=None, sample=None, year_train=2016):
+    """
+    Funcion para la seleccion de las variables a utilizar
+    
+    Parametros:
+    --------------
+        num_feat_kbest: Variables a utilizar para de la seleccion por Kbest
+        num_rfe: Variables a tener en cuenta con el metodo RFE
+        plot_metric: Metrica por la cual se ordernaran los graficos
+        plot: True si se quiere visualizar los resultados obtenidos
+        year_vars: Año en que se tomaron los datos para entrenamiento de variables
+        sample: Usar estrategia de re-sampleo para el entrenamiento
+        year_train: Año en que se tomaron los datos para entrenamiento del modelo
 
+    """  
+      
     if year_vars:
         query = f"SELECT * FROM df WHERE strftime('%Y', Date) = '{year_vars}'"
     else:
@@ -565,6 +640,14 @@ def feature_sel(num_feat_kbest=20, num_rfe=15, plot_metric="chi2", plot=False, y
 
     
 def hyper_tunning(year=2016):
+    
+  """
+  Funcion para el afinamiento de los hyperparametros del modelo seleccionado
+  
+  Parametros:
+  --------------
+      year_train: Año en que se tomaron los datos para entrenamiento del modelo
+  """  
 
   with open("features/vars_rfe.pkl", "rb") as f:
       vars_rfe = pickle.load(f)
@@ -629,6 +712,13 @@ def hyper_tunning(year=2016):
 
 
 def make_prediction(df=None):
+    """
+    Funcion para realizar la prediccion con nuevos datos
+    
+    Parametros:
+    ---------------
+        df: Data frame con la informacion a predecir
+    """
 
     assert isinstance(df, pd.DataFrame), "Se necesita una base de datos para la prediccion"
 
